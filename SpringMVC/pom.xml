@@ -10,7 +10,7 @@
 	<packaging>war</packaging>
 	<name>SpringMVC</name>
 	<properties>
-		<springframework.version>5.0.2.RELEASE</springframework.version>
+		<springframework.version>5.2.20.RELEASE</springframework.version>
 		<!-- <springseurity.version>5.0.0.RELEASE</springseurity.version> -->
 		<maven.compiler.source>1.8</maven.compiler.source>
 		<maven.compiler.target>1.8</maven.compiler.target>
