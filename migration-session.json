@@ -1,0 +1,57 @@
+in templates dir : migration-session.json
+{
+  "version": "1.1",
+  "start_time": null,
+  "end_time": null,
+  "status": "pending",
+  "current_phase": null,
+  "completed_phases": [],
+  "tibco_project_path": null,
+  "springboot_output_path": null,
+  "target_framework": "spring-boot",
+  "spring_boot_version": "3.2.0",
+  "java_version": "17",
+  "build_tool": "maven",
+  "phases": {
+    "phase0_analysis": {
+      "status": "pending",
+      "start_time": null,
+      "end_time": null,
+      "output": null,
+      "error": null
+    },
+    "phase1_design": {
+      "status": "pending",
+      "start_time": null,
+      "end_time": null,
+      "output": null,
+      "error": null
+    },
+    "phase2_coding": {
+      "status": "pending",
+      "start_time": null,
+      "end_time": null,
+      "output": null,
+      "error": null
+    },
+    "phase3_compilation": {
+      "status": "pending",
+      "start_time": null,
+      "end_time": null,
+      "output": null,
+      "error": null
+    },
+    "phase4_testing": {
+      "status": "pending",
+      "start_time": null,
+      "end_time": null,
+      "output": null,
+      "error": null
+    }
+  },
+  "metadata": {
+    "tibco_components_found": [],
+    "tibco_project_name": null,
+    "estimated_complexity": null
+  }
+}
