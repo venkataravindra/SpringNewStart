@@ -1,0 +1,54 @@
+in patterns dir: phase0_patterns.yaml
+phase: phase0_analysis
+phase_name: "TIBCO Analysis & Business Logic Extraction"
+patterns: [1, 2, 3, 4, 5, 28]
+scope: "Analyze TIBCO artifacts, extract business flows, document integrations, identify dependencies"
+
+audit_checklist:
+  - "Scan for TIBCO process files (.process, .bwp)"
+  - "Identify all TIBCO adapters (JMS, JDBC, File, HTTP, REST)"
+  - "Extract message transformation logic (XSLT, XPath, Mappers)"
+  - "Document error handling and retry configurations"
+  - "Map external dependencies (databases, queues, APIs, files)"
+  - "Identify shared resources and global variables"
+
+fix_priorities:
+  - pattern: 1
+    priority: critical
+    reason: "Process flow understanding is foundation for entire migration"
+  - pattern: 2
+    priority: critical
+    reason: "Adapter mapping determines Spring Boot integration architecture"
+  - pattern: 5
+    priority: critical
+    reason: "External dependencies must be identified for configuration"
+  - pattern: 3
+    priority: high
+    reason: "Transformation logic must be preserved in Spring Boot"
+  - pattern: 4
+    priority: high
+    reason: "Error handling patterns affect Spring Boot exception design"
+  - pattern: 28
+    priority: medium
+    reason: "Shared resources inform Spring Boot configuration strategy"
+
+validation_criteria:
+  - "All TIBCO processes documented with business intent"
+  - "Complete adapter inventory with configurations"
+  - "Transformation logic extracted and documented"
+  - "Error handling patterns mapped to Spring Boot equivalents"
+  - "External dependency list complete with connection details"
+  - "Shared resources identified and documented"
+
+expected_outcomes:
+  - "Comprehensive analysis.md with business flows"
+  - "TIBCO → Spring Boot component mapping"
+  - "Logical sequence diagrams (PlantUML/Mermaid)"
+  - "Dependency mapping for all external systems"
+  - "Foundation for design phase"
+
+guardrails:
+  - "Focus on WHAT the system does, not HOW TIBCO implements it"
+  - "Document business intent, not technical implementation details"
+  - "Keep analysis implementation-agnostic"
+  - "Identify all integration points and data flows"
