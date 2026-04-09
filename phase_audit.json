@@ -1,0 +1,40 @@
+in templates : phase_audit.json
+{
+  "phase": "phase0_analysis",
+  "timestamp": null,
+  "checks_performed": [],
+  "findings": [
+    {
+      "check_id": "TIBCO_001",
+      "triggered": true,
+      "severity": "high",
+      "category": "business_logic",
+      "evidence": {
+        "files": ["OrderProcessing.process"],
+        "components": ["JDBC Query", "HTTP Receiver"],
+        "context": "Database connection without retry logic",
+        "full_description": "TIBCO process uses JDBC without implementing retry mechanism for transient failures"
+      },
+      "why_it_matters": "Database connection failures can cause process failures without automatic recovery",
+      "recommended_action": "Implement retry logic with exponential backoff in Spring Boot service",
+      "estimated_effort": "medium"
+    }
+  ],
+  "summary": {
+    "total_checks": 0,
+    "total_triggered": 0,
+    "by_severity": {
+      "critical": 0,
+      "high": 0,
+      "medium": 0,
+      "low": 0
+    },
+    "by_category": {
+      "business_logic": 0,
+      "integration": 0,
+      "error_handling": 0,
+      "performance": 0,
+      "security": 0
+    }
+  }
+}
