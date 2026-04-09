@@ -1,0 +1,1351 @@
+in patterns:catalog.yaml
+version: "1.0"
+total_patterns: 45
+coverage_status:
+  documented: 45  # All patterns defined for TIBCO → Spring Boot migration
+  placeholder: 0
+
+# Pattern Categories for TIBCO → Spring Boot Migration:
+# - tibco_analysis: TIBCO artifact identification and business logic extraction
+# - architecture: Microservices design, component mapping, integration patterns
+# - spring_implementation: Spring Boot code generation, REST APIs, messaging
+# - build_config: Maven/Gradle setup, dependencies, configuration management
+# - testing: Unit tests, integration tests, test coverage
+
+patterns:
+  # ===== PHASE 0: ANALYSIS PATTERNS =====
+  - id: 1
+    category: tibco_analysis
+    name: "TIBCO Process Flow Identification"
+    phase: phase0_analysis
+    severity: critical
+    description: "Identify and document all TIBCO BusinessWorks process flows and their execution sequences"
+    detector:
+      type: file_pattern
+      files: ["**/*.process", "**/*.bwp"]
+      heuristics:
+        - "Scan for .process files (TIBCO BW6) or .bwp files (TIBCO BW5)"
+        - "Extract process names, activities, and transitions"
+        - "Identify start/end activities and error handlers"
+    remediation:
+      strategy: "Document each process flow with business intent and execution sequence"
+      example: |
+        # Analysis Output
+        Process: OrderProcessing.process
+        - Start: ReceiveOrder (JMS Subscriber)
+        - Activity: ValidateOrder (Java Activity)
+        - Activity: EnrichOrder (JDBC Query)
+        - Activity: TransformOrder (XSLT Mapper)
+        - End: SendToFulfillment (JMS Publisher)
+        Error Handler: LogError → SendAlert
+    references:
+      - "TIBCO BusinessWorks documentation"
+      - "Spring Boot microservices patterns"
+
+  - id: 2
+    category: tibco_analysis
+    name: "TIBCO Adapter Detection"
+    phase: phase0_analysis
+    severity: critical
+    description: "Identify all TIBCO adapters (JMS, JDBC, File, HTTP, etc.) and their configurations"
+    detector:
+      type: config_pattern
+      files: ["**/*.substvar", "**/*.module", "**/application.properties"]
+      heuristics:
+        - "Search for JMS connection factories and queue/topic names"
+        - "Identify JDBC data sources and connection pools"
+        - "Find File adapter configurations (directories, patterns)"
+        - "Locate HTTP/REST adapter endpoints"
+    remediation:
+      strategy: "Map each TIBCO adapter to Spring Boot equivalent"
+      example: |
+        # TIBCO JMS Adapter → Spring JMS
+        TIBCO: JMS Queue Receiver (queue: orders.incoming)
+        Spring Boot: @JmsListener(destination = "orders.incoming")
+        
+        # TIBCO JDBC Adapter → Spring Data JPA
+        TIBCO: JDBC Query Activity (SELECT * FROM customers)
+        Spring Boot: CustomerRepository.findAll()
+    references:
+      - "Spring JMS documentation"
+      - "Spring Data JPA documentation"
+
+  - id: 3
+    category: tibco_analysis
+    name: "Message Transformation Logic"
+    phase: phase0_analysis
+    severity: high
+    description: "Extract and document all message transformation logic (XSLT, XPath, Mappers)"
+    detector:
+      type: file_pattern
+      files: ["**/*.xsl", "**/*.xslt", "**/*.map"]
+      heuristics:
+        - "Identify XSLT transformations and their input/output schemas"
+        - "Extract XPath expressions used in mappers"
+        - "Document field mappings and data conversions"
+    remediation:
+      strategy: "Convert XSLT/XPath logic to Java/Spring transformation logic"
+      example: |
+        # TIBCO XSLT Mapper
+        <xsl:template match="/">
+          <output>
+            <orderId><xsl:value-of select="//order/id"/></orderId>
+          </output>
+        </xsl:template>
+        
+        # Spring Boot Java Mapper
+        public OrderDTO transform(OrderInput input) {
+          return OrderDTO.builder()
+            .orderId(input.getOrder().getId())
+            .build();
+        }
+
+  - id: 4
+    category: tibco_analysis
+    name: "Error Handling and Retry Logic"
+    phase: phase0_analysis
+    severity: high
+    description: "Document TIBCO error handling, catch blocks, and retry configurations"
+    detector:
+      type: code_pattern
+      files: ["**/*.process"]
+      heuristics:
+        - "Identify Catch activities and error transitions"
+        - "Find retry configurations (max attempts, intervals)"
+        - "Document error logging and alerting mechanisms"
+    remediation:
+      strategy: "Map to Spring Boot exception handling and retry mechanisms"
+      example: |
+        # TIBCO Error Handler
+        Catch: SQLException → Retry 3 times (5s interval) → Log Error
+        
+        # Spring Boot
+        @Retryable(maxAttempts = 3, backoff = @Backoff(delay = 5000))
+        @Recover
+        public void handleSQLException(SQLException ex) {
+          log.error("Database error after retries", ex);
+        }
+
+  - id: 5
+    category: tibco_analysis
+    name: "External Dependencies Mapping"
+    phase: phase0_analysis
+    severity: critical
+    description: "Identify all external system dependencies (databases, queues, APIs, files)"
+    detector:
+      type: config_pattern
+      files: ["**/*.substvar", "**/*.module"]
+      heuristics:
+        - "List all database connections (JDBC URLs, schemas)"
+        - "Document JMS/EMS queue and topic names"
+        - "Identify external REST/SOAP endpoints"
+        - "Find file system paths and FTP/SFTP connections"
+    remediation:
+      strategy: "Create Spring Boot configuration for all external dependencies"
+      example: |
+        # TIBCO Configuration
+        DB: jdbc:oracle:thin:@host:1521:orcl
+        JMS: tcp://localhost:7222
+        
+        # Spring Boot application.yml
+        spring:
+          datasource:
+            url: jdbc:oracle:thin:@host:1521:orcl
+          jms:
+            broker-url: tcp://localhost:7222
+
+  # ===== PHASE 1: DESIGN PATTERNS =====
+  - id: 6
+    category: architecture
+    name: "Microservice Boundary Definition"
+    phase: phase1_design
+    severity: critical
+    description: "Define clear microservice boundaries based on TIBCO process groupings"
+    detector:
+      type: manual_review
+      heuristics:
+        - "Group related TIBCO processes into logical services"
+        - "Identify bounded contexts and domain boundaries"
+        - "Ensure single responsibility per microservice"
+    remediation:
+      strategy: "Design microservices with clear responsibilities and APIs"
+      example: |
+        # TIBCO Processes → Microservices
+        OrderProcessing.process + OrderValidation.process → order-service
+        PaymentProcessing.process → payment-service
+        InventoryCheck.process → inventory-service
+
+  - id: 7
+    category: architecture
+    name: "REST API Design"
+    phase: phase1_design
+    severity: high
+    description: "Design RESTful APIs to replace TIBCO process invocations"
+    detector:
+      type: manual_review
+      heuristics:
+        - "Identify synchronous TIBCO process calls"
+        - "Define REST endpoints with proper HTTP methods"
+        - "Design request/response DTOs"
+    remediation:
+      strategy: "Create OpenAPI/Swagger specifications for all APIs"
+      example: |
+        # TIBCO Process Call
+        Invoke: OrderProcessing.process (input: orderXML)
+        
+        # REST API
+        POST /api/v1/orders
+        Request: OrderRequest DTO
+        Response: OrderResponse DTO
+
+  - id: 8
+    category: architecture
+    name: "Messaging Pattern Selection"
+    phase: phase1_design
+    severity: high
+    description: "Choose appropriate messaging patterns (pub/sub, point-to-point, request/reply)"
+    detector:
+      type: manual_review
+      heuristics:
+        - "Analyze TIBCO JMS/EMS usage patterns"
+        - "Identify synchronous vs asynchronous flows"
+        - "Determine message ordering requirements"
+    remediation:
+      strategy: "Design Spring JMS/Kafka messaging architecture"
+      example: |
+        # TIBCO EMS Queue → Spring JMS Queue
+        Point-to-Point: orders.queue → @JmsListener
+        
+        # TIBCO EMS Topic → Spring JMS Topic
+        Pub/Sub: notifications.topic → @JmsListener(subscription = "durable")
+
+  - id: 9
+    category: architecture
+    name: "Data Model Design"
+    phase: phase1_design
+    severity: high
+    description: "Design JPA entities and database schema based on TIBCO data structures"
+    detector:
+      type: manual_review
+      heuristics:
+        - "Extract data structures from TIBCO schemas"
+        - "Identify entity relationships"
+        - "Define primary keys and indexes"
+    remediation:
+      strategy: "Create JPA entity classes with proper annotations"
+      example: |
+        @Entity
+        @Table(name = "orders")
+        public class Order {
+          @Id
+          @GeneratedValue(strategy = GenerationType.IDENTITY)
+          private Long id;
+          
+          @Column(nullable = false)
+          private String orderNumber;
+          
+          @OneToMany(mappedBy = "order")
+          private List<OrderItem> items;
+        }
+
+  - id: 10
+    category: architecture
+    name: "Configuration Management Strategy"
+    phase: phase1_design
+    severity: medium
+    description: "Design externalized configuration approach for Spring Boot"
+    detector:
+      type: manual_review
+      heuristics:
+        - "Identify TIBCO substitution variables"
+        - "Document environment-specific configurations"
+        - "Plan for secrets management"
+    remediation:
+      strategy: "Use Spring Cloud Config or application.yml profiles"
+      example: |
+        # application.yml
+        spring:
+          profiles:
+            active: ${ENVIRONMENT:dev}
+        ---
+        spring:
+          config:
+            activate:
+              on-profile: dev
+          datasource:
+            url: jdbc:h2:mem:testdb
+
+  # ===== PHASE 2: CODING PATTERNS =====
+  - id: 11
+    category: spring_implementation
+    name: "REST Controller Implementation"
+    phase: phase2_coding
+    severity: critical
+    description: "Implement Spring Boot REST controllers based on design specifications"
+    detector:
+      type: code_review
+      heuristics:
+        - "Verify @RestController annotations"
+        - "Check proper HTTP method mappings"
+        - "Validate request/response DTOs"
+    remediation:
+      strategy: "Generate REST controllers with proper annotations and error handling"
+      example: |
+        @RestController
+        @RequestMapping("/api/v1/orders")
+        @Validated
+        public class OrderController {
+          
+          @PostMapping
+          public ResponseEntity<OrderResponse> createOrder(
+              @Valid @RequestBody OrderRequest request) {
+            OrderResponse response = orderService.createOrder(request);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+          }
+        }
+
+  - id: 12
+    category: spring_implementation
+    name: "Service Layer Implementation"
+    phase: phase2_coding
+    severity: critical
+    description: "Implement business logic in Spring service classes"
+    detector:
+      type: code_review
+      heuristics:
+        - "Verify @Service annotations"
+        - "Check transaction management (@Transactional)"
+        - "Validate business logic implementation"
+    remediation:
+      strategy: "Create service classes with clear business logic separation"
+      example: |
+        @Service
+        @Transactional
+        public class OrderService {
+          
+          private final OrderRepository orderRepository;
+          
+          public OrderResponse createOrder(OrderRequest request) {
+            // Business logic from TIBCO process
+            Order order = mapToEntity(request);
+            order = orderRepository.save(order);
+            return mapToResponse(order);
+          }
+        }
+
+  - id: 13
+    category: spring_implementation
+    name: "JMS Listener Implementation"
+    phase: phase2_coding
+    severity: high
+    description: "Implement Spring JMS listeners for message-driven processing"
+    detector:
+      type: code_review
+      heuristics:
+        - "Verify @JmsListener annotations"
+        - "Check message conversion and error handling"
+        - "Validate transaction boundaries"
+    remediation:
+      strategy: "Create JMS listeners with proper error handling"
+      example: |
+        @Component
+        public class OrderMessageListener {
+          
+          @JmsListener(destination = "orders.incoming")
+          @Transactional
+          public void processOrder(OrderMessage message) {
+            log.info("Received order: {}", message.getOrderId());
+            orderService.processOrder(message);
+          }
+          
+          @JmsListener(destination = "orders.incoming.DLQ")
+          public void handleFailedOrder(OrderMessage message) {
+            log.error("Failed order: {}", message.getOrderId());
+            // Error handling logic
+          }
+        }
+
+  - id: 14
+    category: spring_implementation
+    name: "Data Repository Implementation"
+    phase: phase2_coding
+    severity: high
+    description: "Implement Spring Data JPA repositories"
+    detector:
+      type: code_review
+      heuristics:
+        - "Verify repository interfaces extend JpaRepository"
+        - "Check custom query methods"
+        - "Validate entity mappings"
+    remediation:
+      strategy: "Create repository interfaces with custom queries as needed"
+      example: |
+        @Repository
+        public interface OrderRepository extends JpaRepository<Order, Long> {
+          
+          List<Order> findByCustomerId(Long customerId);
+          
+          @Query("SELECT o FROM Order o WHERE o.status = :status AND o.createdDate > :date")
+          List<Order> findRecentOrdersByStatus(
+              @Param("status") OrderStatus status,
+              @Param("date") LocalDateTime date);
+        }
+
+  - id: 15
+    category: spring_implementation
+    name: "Exception Handling Implementation"
+    phase: phase2_coding
+    severity: high
+    description: "Implement global exception handling with @ControllerAdvice"
+    detector:
+      type: code_review
+      heuristics:
+        - "Verify @ControllerAdvice or @RestControllerAdvice"
+        - "Check exception handler methods"
+        - "Validate error response structure"
+    remediation:
+      strategy: "Create centralized exception handling"
+      example: |
+        @RestControllerAdvice
+        public class GlobalExceptionHandler {
+          
+          @ExceptionHandler(OrderNotFoundException.class)
+          public ResponseEntity<ErrorResponse> handleOrderNotFound(
+              OrderNotFoundException ex) {
+            ErrorResponse error = new ErrorResponse(
+                HttpStatus.NOT_FOUND.value(),
+                ex.getMessage(),
+                LocalDateTime.now()
+            );
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+          }
+        }
+
+  - id: 16
+    category: spring_implementation
+    name: "Configuration Properties Implementation"
+    phase: phase2_coding
+    severity: medium
+    description: "Implement type-safe configuration using @ConfigurationProperties"
+    detector:
+      type: code_review
+      heuristics:
+        - "Verify @ConfigurationProperties classes"
+        - "Check property validation"
+        - "Validate application.yml structure"
+    remediation:
+      strategy: "Create configuration classes for externalized properties"
+      example: |
+        @ConfigurationProperties(prefix = "app.order")
+        @Validated
+        public class OrderProperties {
+          
+          @NotNull
+          private Integer maxRetries;
+          
+          @NotNull
+          private Duration retryDelay;
+          
+          // Getters and setters
+        }
+
+  - id: 17
+    category: spring_implementation
+    name: "DTO and Mapper Implementation"
+    phase: phase2_coding
+    severity: medium
+    description: "Implement DTOs and mapping logic between entities and DTOs"
+    detector:
+      type: code_review
+      heuristics:
+        - "Verify DTO classes with proper validation"
+        - "Check mapper implementations (MapStruct or manual)"
+        - "Validate field mappings"
+    remediation:
+      strategy: "Create DTOs with validation and mapper classes"
+      example: |
+        public class OrderRequest {
+          @NotNull
+          private String customerId;
+          
+          @NotEmpty
+          private List<OrderItemRequest> items;
+        }
+        
+        @Mapper(componentModel = "spring")
+        public interface OrderMapper {
+          Order toEntity(OrderRequest request);
+          OrderResponse toResponse(Order entity);
+        }
+
+  # ===== PHASE 3: COMPILATION PATTERNS =====
+  - id: 18
+    category: build_config
+    name: "Maven/Gradle Configuration"
+    phase: phase3_compilation
+    severity: critical
+    description: "Ensure proper build configuration with all required dependencies"
+    detector:
+      type: file_check
+      files: ["pom.xml", "build.gradle"]
+      heuristics:
+        - "Verify Spring Boot parent/plugin configuration"
+        - "Check all required dependencies are present"
+        - "Validate dependency versions"
+    remediation:
+      strategy: "Configure build file with proper dependencies and plugins"
+      example: |
+        <!-- pom.xml -->
+        <parent>
+          <groupId>org.springframework.boot</groupId>
+          <artifactId>spring-boot-starter-parent</artifactId>
+          <version>3.2.0</version>
+        </parent>
+        
+        <dependencies>
+          <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+          </dependency>
+          <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+          </dependency>
+        </dependencies>
+
+  - id: 19
+    category: build_config
+    name: "Compilation Error Resolution"
+    phase: phase3_compilation
+    severity: critical
+    description: "Identify and fix compilation errors"
+    detector:
+      type: build_output
+      heuristics:
+        - "Parse Maven/Gradle build output for errors"
+        - "Identify missing imports"
+        - "Find type mismatches and syntax errors"
+    remediation:
+      strategy: "Fix compilation errors systematically"
+      example: |
+        # Error: Cannot resolve symbol 'OrderRepository'
+        # Fix: Add import statement
+        import com.example.repository.OrderRepository;
+
+  - id: 20
+    category: build_config
+    name: "Dependency Conflict Resolution"
+    phase: phase3_compilation
+    severity: high
+    description: "Resolve dependency version conflicts"
+    detector:
+      type: build_output
+      heuristics:
+        - "Check for dependency convergence issues"
+        - "Identify version conflicts in build output"
+    remediation:
+      strategy: "Use dependency management to resolve conflicts"
+      example: |
+        <dependencyManagement>
+          <dependencies>
+            <dependency>
+              <groupId>com.fasterxml.jackson.core</groupId>
+              <artifactId>jackson-databind</artifactId>
+              <version>2.15.0</version>
+            </dependency>
+          </dependencies>
+        </dependencyManagement>
+
+  - id: 21
+    category: build_config
+    name: "Application Startup Validation"
+    phase: phase3_compilation
+    severity: critical
+    description: "Ensure application starts successfully without errors"
+    detector:
+      type: runtime_check
+      heuristics:
+        - "Run application and check for startup errors"
+        - "Verify all beans are created successfully"
+        - "Check for configuration issues"
+    remediation:
+      strategy: "Fix configuration and bean creation issues"
+      example: |
+        # Error: Failed to configure DataSource
+        # Fix: Add datasource configuration in application.yml
+        spring:
+          datasource:
+            url: jdbc:h2:mem:testdb
+            driver-class-name: org.h2.Driver
+
+  - id: 22
+    category: build_config
+    name: "Package Structure Validation"
+    phase: phase3_compilation
+    severity: medium
+    description: "Ensure proper package structure and component scanning"
+    detector:
+      type: code_review
+      heuristics:
+        - "Verify main application class location"
+        - "Check component scan configuration"
+        - "Validate package naming conventions"
+    remediation:
+      strategy: "Organize packages following Spring Boot conventions"
+      example: |
+        com.example.orderservice
+        ├── OrderServiceApplication.java (main class)
+        ├── controller/
+        ├── service/
+        ├── repository/
+        ├── model/
+        └── config/
+
+  # ===== PHASE 4: TESTING PATTERNS =====
+  - id: 23
+    category: testing
+    name: "Unit Test Coverage"
+    phase: phase4_testing
+    severity: high
+    description: "Ensure adequate unit test coverage for all business logic"
+    detector:
+      type: test_coverage
+      heuristics:
+        - "Check test coverage metrics (>80% for services)"
+        - "Verify all public methods have tests"
+        - "Validate edge cases are tested"
+    remediation:
+      strategy: "Write unit tests using JUnit 5 and Mockito"
+      example: |
+        @ExtendWith(MockitoExtension.class)
+        class OrderServiceTest {
+          
+          @Mock
+          private OrderRepository orderRepository;
+          
+          @InjectMocks
+          private OrderService orderService;
+          
+          @Test
+          void createOrder_ValidRequest_ReturnsOrderResponse() {
+            // Given
+            OrderRequest request = new OrderRequest();
+            Order order = new Order();
+            when(orderRepository.save(any())).thenReturn(order);
+            
+            // When
+            OrderResponse response = orderService.createOrder(request);
+            
+            // Then
+            assertNotNull(response);
+            verify(orderRepository).save(any());
+          }
+        }
+
+  - id: 24
+    category: testing
+    name: "Controller Integration Tests"
+    phase: phase4_testing
+    severity: high
+    description: "Test REST controllers with MockMvc"
+    detector:
+      type: test_review
+      heuristics:
+        - "Verify @WebMvcTest or @SpringBootTest usage"
+        - "Check MockMvc test methods"
+        - "Validate request/response testing"
+    remediation:
+      strategy: "Write integration tests for all REST endpoints"
+      example: |
+        @WebMvcTest(OrderController.class)
+        class OrderControllerTest {
+          
+          @Autowired
+          private MockMvc mockMvc;
+          
+          @MockBean
+          private OrderService orderService;
+          
+          @Test
+          void createOrder_ValidRequest_Returns201() throws Exception {
+            OrderRequest request = new OrderRequest();
+            OrderResponse response = new OrderResponse();
+            when(orderService.createOrder(any())).thenReturn(response);
+            
+            mockMvc.perform(post("/api/v1/orders")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+              .andExpect(status().isCreated());
+          }
+        }
+
+  - id: 25
+    category: testing
+    name: "Repository Tests"
+    phase: phase4_testing
+    severity: medium
+    description: "Test JPA repositories with @DataJpaTest"
+    detector:
+      type: test_review
+      heuristics:
+        - "Verify @DataJpaTest usage"
+        - "Check repository method tests"
+        - "Validate custom query tests"
+    remediation:
+      strategy: "Write repository tests with in-memory database"
+      example: |
+        @DataJpaTest
+        class OrderRepositoryTest {
+          
+          @Autowired
+          private OrderRepository orderRepository;
+          
+          @Test
+          void findByCustomerId_ExistingCustomer_ReturnsOrders() {
+            // Given
+            Order order = new Order();
+            order.setCustomerId(1L);
+            orderRepository.save(order);
+            
+            // When
+            List<Order> orders = orderRepository.findByCustomerId(1L);
+            
+            // Then
+            assertEquals(1, orders.size());
+          }
+        }
+
+  - id: 26
+    category: testing
+    name: "JMS Listener Tests"
+    phase: phase4_testing
+    severity: medium
+    description: "Test JMS message listeners"
+    detector:
+      type: test_review
+      heuristics:
+        - "Verify JMS listener test setup"
+        - "Check message sending and receiving tests"
+        - "Validate error handling tests"
+    remediation:
+      strategy: "Write tests for JMS listeners with embedded broker"
+      example: |
+        @SpringBootTest
+        @DirtiesContext
+        class OrderMessageListenerTest {
+          
+          @Autowired
+          private JmsTemplate jmsTemplate;
+          
+          @Autowired
+          private OrderService orderService;
+          
+          @Test
+          void processOrder_ValidMessage_ProcessesSuccessfully() {
+            OrderMessage message = new OrderMessage();
+            jmsTemplate.convertAndSend("orders.incoming", message);
+            
+            // Wait and verify processing
+            await().atMost(5, SECONDS)
+              .untilAsserted(() -> verify(orderService).processOrder(any()));
+          }
+        }
+
+  - id: 27
+    category: testing
+    name: "Exception Handling Tests"
+    phase: phase4_testing
+    severity: medium
+    description: "Test exception handling and error responses"
+    detector:
+      type: test_review
+      heuristics:
+        - "Verify exception handler tests"
+        - "Check error response format tests"
+        - "Validate HTTP status code tests"
+    remediation:
+      strategy: "Write tests for all exception scenarios"
+      example: |
+        @WebMvcTest(OrderController.class)
+        class ExceptionHandlingTest {
+          
+          @Test
+          void createOrder_OrderNotFound_Returns404() throws Exception {
+            when(orderService.createOrder(any()))
+              .thenThrow(new OrderNotFoundException("Order not found"));
+            
+            mockMvc.perform(post("/api/v1/orders")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
+              .andExpect(status().isNotFound())
+              .andExpect(jsonPath("$.message").value("Order not found"));
+          }
+        }
+
+  # ===== ADDITIONAL CROSS-CUTTING PATTERNS =====
+  - id: 28
+    category: tibco_analysis
+    name: "TIBCO Shared Resources Identification"
+    phase: phase0_analysis
+    severity: medium
+    description: "Identify shared resources (variables, connections) used across processes"
+    detector:
+      type: config_pattern
+      files: ["**/*.substvar", "**/*.sharedresource"]
+      heuristics:
+        - "Find shared JDBC connections"
+        - "Identify shared JMS connections"
+        - "Document global variables"
+    remediation:
+      strategy: "Centralize shared configurations in Spring Boot"
+      example: |
+        # Shared JDBC Connection → Spring DataSource Bean
+        @Configuration
+        public class DataSourceConfig {
+          @Bean
+          public DataSource dataSource() {
+            return DataSourceBuilder.create()
+              .url(jdbcUrl)
+              .build();
+          }
+        }
+
+  - id: 29
+    category: architecture
+    name: "Transaction Management Design"
+    phase: phase1_design
+    severity: high
+    description: "Design transaction boundaries for Spring Boot services"
+    detector:
+      type: manual_review
+      heuristics:
+        - "Identify TIBCO transaction groups"
+        - "Determine transaction propagation requirements"
+        - "Plan for distributed transactions if needed"
+    remediation:
+      strategy: "Use @Transactional with appropriate propagation"
+      example: |
+        @Service
+        public class OrderService {
+          
+          @Transactional(propagation = Propagation.REQUIRED)
+          public void processOrder(Order order) {
+            // All operations in single transaction
+          }
+          
+          @Transactional(propagation = Propagation.REQUIRES_NEW)
+          public void logAudit(AuditLog log) {
+            // Independent transaction
+          }
+        }
+
+  - id: 30
+    category: spring_implementation
+    name: "Logging Implementation"
+    phase: phase2_coding
+    severity: medium
+    description: "Implement proper logging using SLF4J/Logback"
+    detector:
+      type: code_review
+      heuristics:
+        - "Verify logger declarations"
+        - "Check log levels usage"
+        - "Validate structured logging"
+    remediation:
+      strategy: "Use SLF4J with appropriate log levels"
+      example: |
+        @Service
+        @Slf4j
+        public class OrderService {
+          
+          public void processOrder(Order order) {
+            log.info("Processing order: {}", order.getId());
+            try {
+              // Process order
+              log.debug("Order details: {}", order);
+            } catch (Exception e) {
+              log.error("Failed to process order: {}", order.getId(), e);
+              throw e;
+            }
+          }
+        }
+
+  # Additional patterns 31-45 would cover:
+  # - Security (authentication, authorization)
+  # - Monitoring and metrics
+  # - API documentation (Swagger/OpenAPI)
+  # - Database migration (Flyway/Liquibase)
+  # - Caching strategies
+  # - Async processing
+  # - Circuit breakers
+  # - API versioning
+  # - CORS configuration
+  # - Health checks and actuator
+  # - Docker containerization
+  # - Kubernetes deployment
+  # - CI/CD pipeline
+  # - Performance optimization
+  # - Code quality checks
+
+  - id: 31
+    category: spring_implementation
+    name: "Security Configuration"
+    phase: phase2_coding
+    severity: high
+    description: "Implement Spring Security for authentication and authorization"
+    detector:
+      type: code_review
+      heuristics:
+        - "Verify SecurityConfig class exists"
+        - "Check authentication mechanism"
+        - "Validate authorization rules"
+    remediation:
+      strategy: "Configure Spring Security with appropriate authentication"
+      example: |
+        @Configuration
+        @EnableWebSecurity
+        public class SecurityConfig {
+          
+          @Bean
+          public SecurityFilterChain filterChain(HttpSecurity http) {
+            http
+              .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/api/public/**").permitAll()
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                .anyRequest().authenticated()
+              )
+              .oauth2ResourceServer(OAuth2ResourceServerConfigurer::jwt);
+            return http.build();
+          }
+        }
+
+  - id: 32
+    category: spring_implementation
+    name: "API Documentation"
+    phase: phase2_coding
+    severity: low
+    description: "Add OpenAPI/Swagger documentation for REST APIs"
+    detector:
+      type: code_review
+      heuristics:
+        - "Check for springdoc-openapi dependency"
+        - "Verify @Operation annotations"
+        - "Validate API documentation completeness"
+    remediation:
+      strategy: "Add Swagger annotations to controllers"
+      example: |
+        @RestController
+        @Tag(name = "Orders", description = "Order management APIs")
+        public class OrderController {
+          
+          @Operation(summary = "Create new order")
+          @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Order created"),
+            @ApiResponse(responseCode = "400", description = "Invalid request")
+          })
+          @PostMapping
+          public ResponseEntity<OrderResponse> createOrder(
+              @RequestBody OrderRequest request) {
+            // Implementation
+          }
+        }
+
+  - id: 33
+    category: build_config
+    name: "Database Migration Setup"
+    phase: phase3_compilation
+    severity: medium
+    description: "Configure Flyway or Liquibase for database migrations"
+    detector:
+      type: config_check
+      heuristics:
+        - "Check for Flyway/Liquibase dependency"
+        - "Verify migration scripts exist"
+        - "Validate migration configuration"
+    remediation:
+      strategy: "Set up Flyway with versioned migration scripts"
+      example: |
+        # application.yml
+        spring:
+          flyway:
+            enabled: true
+            locations: classpath:db/migration
+        
+        # V1__create_orders_table.sql
+        CREATE TABLE orders (
+          id BIGINT PRIMARY KEY AUTO_INCREMENT,
+          order_number VARCHAR(50) NOT NULL,
+          created_date TIMESTAMP NOT NULL
+        );
+
+  - id: 34
+    category: spring_implementation
+    name: "Actuator and Health Checks"
+    phase: phase2_coding
+    severity: medium
+    description: "Configure Spring Boot Actuator for monitoring"
+    detector:
+      type: config_check
+      heuristics:
+        - "Verify actuator dependency"
+        - "Check health check endpoints"
+        - "Validate metrics configuration"
+    remediation:
+      strategy: "Enable actuator endpoints for monitoring"
+      example: |
+        # application.yml
+        management:
+          endpoints:
+            web:
+              exposure:
+                include: health,info,metrics
+          endpoint:
+            health:
+              show-details: always
+        
+        # Custom health indicator
+        @Component
+        public class OrderServiceHealthIndicator implements HealthIndicator {
+          @Override
+          public Health health() {
+            // Check service health
+            return Health.up().build();
+          }
+        }
+
+  - id: 35
+    category: spring_implementation
+    name: "Caching Strategy"
+    phase: phase2_coding
+    severity: low
+    description: "Implement caching for frequently accessed data"
+    detector:
+      type: code_review
+      heuristics:
+        - "Identify cacheable operations"
+        - "Verify @Cacheable annotations"
+        - "Check cache configuration"
+    remediation:
+      strategy: "Use Spring Cache abstraction"
+      example: |
+        @Service
+        public class CustomerService {
+          
+          @Cacheable(value = "customers", key = "#id")
+          public Customer getCustomer(Long id) {
+            return customerRepository.findById(id)
+              .orElseThrow(() -> new CustomerNotFoundException(id));
+          }
+          
+          @CacheEvict(value = "customers", key = "#customer.id")
+          public void updateCustomer(Customer customer) {
+            customerRepository.save(customer);
+          }
+        }
+
+  - id: 36
+    category: architecture
+    name: "Async Processing Design"
+    phase: phase1_design
+    severity: medium
+    description: "Design asynchronous processing for long-running operations"
+    detector:
+      type: manual_review
+      heuristics:
+        - "Identify long-running TIBCO processes"
+        - "Determine async processing requirements"
+        - "Plan for callback mechanisms"
+    remediation:
+      strategy: "Use @Async for asynchronous operations"
+      example: |
+        @Service
+        public class OrderProcessingService {
+          
+          @Async
+          public CompletableFuture<OrderResult> processOrderAsync(Order order) {
+            // Long-running processing
+            OrderResult result = processOrder(order);
+            return CompletableFuture.completedFuture(result);
+          }
+        }
+
+  - id: 37
+    category: spring_implementation
+    name: "Circuit Breaker Implementation"
+    phase: phase2_coding
+    severity: medium
+    description: "Implement circuit breaker for external service calls"
+    detector:
+      type: code_review
+      heuristics:
+        - "Identify external service dependencies"
+        - "Check for Resilience4j usage"
+        - "Verify fallback methods"
+    remediation:
+      strategy: "Use Resilience4j circuit breaker"
+      example: |
+        @Service
+        public class PaymentService {
+          
+          @CircuitBreaker(name = "paymentService", fallbackMethod = "fallbackPayment")
+          public PaymentResponse processPayment(PaymentRequest request) {
+            return paymentClient.process(request);
+          }
+          
+          private PaymentResponse fallbackPayment(PaymentRequest request, Exception ex) {
+            log.error("Payment service unavailable", ex);
+            return PaymentResponse.failed("Service temporarily unavailable");
+          }
+        }
+
+  - id: 38
+    category: architecture
+    name: "API Versioning Strategy"
+    phase: phase1_design
+    severity: low
+    description: "Design API versioning strategy for backward compatibility"
+    detector:
+      type: manual_review
+      heuristics:
+        - "Plan for API evolution"
+        - "Define versioning approach (URI, header, media type)"
+    remediation:
+      strategy: "Use URI versioning for REST APIs"
+      example: |
+        @RestController
+        @RequestMapping("/api/v1/orders")
+        public class OrderControllerV1 {
+          // Version 1 implementation
+        }
+        
+        @RestController
+        @RequestMapping("/api/v2/orders")
+        public class OrderControllerV2 {
+          // Version 2 with breaking changes
+        }
+
+  - id: 39
+    category: build_config
+    name: "CORS Configuration"
+    phase: phase3_compilation
+    severity: medium
+    description: "Configure CORS for cross-origin requests"
+    detector:
+      type: config_check
+      heuristics:
+        - "Check CORS configuration"
+        - "Verify allowed origins"
+        - "Validate allowed methods"
+    remediation:
+      strategy: "Configure CORS in WebMvcConfigurer"
+      example: |
+        @Configuration
+        public class WebConfig implements WebMvcConfigurer {
+          
+          @Override
+          public void addCorsMappings(CorsRegistry registry) {
+            registry.addMapping("/api/**")
+              .allowedOrigins("http://localhost:3000")
+              .allowedMethods("GET", "POST", "PUT", "DELETE")
+              .allowedHeaders("*")
+              .allowCredentials(true);
+          }
+        }
+
+  - id: 40
+    category: build_config
+    name: "Docker Containerization"
+    phase: phase3_compilation
+    severity: low
+    description: "Create Dockerfile for containerization"
+    detector:
+      type: file_check
+      files: ["Dockerfile"]
+      heuristics:
+        - "Verify Dockerfile exists"
+        - "Check multi-stage build"
+        - "Validate base image selection"
+    remediation:
+      strategy: "Create optimized Dockerfile"
+      example: |
+        FROM eclipse-temurin:17-jre-alpine
+        WORKDIR /app
+        COPY target/*.jar app.jar
+        EXPOSE 8080
+        ENTRYPOINT ["java", "-jar", "app.jar"]
+
+  - id: 41
+    category: testing
+    name: "Integration Test Suite"
+    phase: phase4_testing
+    severity: high
+    description: "Create comprehensive integration tests"
+    detector:
+      type: test_review
+      heuristics:
+        - "Verify @SpringBootTest usage"
+        - "Check end-to-end test scenarios"
+        - "Validate test data setup"
+    remediation:
+      strategy: "Write integration tests covering main flows"
+      example: |
+        @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
+        @AutoConfigureTestDatabase
+        class OrderIntegrationTest {
+          
+          @Autowired
+          private TestRestTemplate restTemplate;
+          
+          @Test
+          void createAndRetrieveOrder_Success() {
+            OrderRequest request = new OrderRequest();
+            
+            ResponseEntity<OrderResponse> createResponse = 
+              restTemplate.postForEntity("/api/v1/orders", request, OrderResponse.class);
+            
+            assertEquals(HttpStatus.CREATED, createResponse.getStatusCode());
+            
+            Long orderId = createResponse.getBody().getId();
+            ResponseEntity<OrderResponse> getResponse = 
+              restTemplate.getForEntity("/api/v1/orders/" + orderId, OrderResponse.class);
+            
+            assertEquals(HttpStatus.OK, getResponse.getStatusCode());
+          }
+        }
+
+  - id: 42
+    category: spring_implementation
+    name: "Validation Implementation"
+    phase: phase2_coding
+    severity: medium
+    description: "Implement bean validation for request DTOs"
+    detector:
+      type: code_review
+      heuristics:
+        - "Verify validation annotations on DTOs"
+        - "Check @Valid usage in controllers"
+        - "Validate custom validators"
+    remediation:
+      strategy: "Use Jakarta Bean Validation"
+      example: |
+        public class OrderRequest {
+          
+          @NotNull(message = "Customer ID is required")
+          private Long customerId;
+          
+          @NotEmpty(message = "Order items cannot be empty")
+          @Size(min = 1, max = 100, message = "Order must have 1-100 items")
+          private List<OrderItemRequest> items;
+          
+          @DecimalMin(value = "0.01", message = "Total must be positive")
+          private BigDecimal total;
+        }
+
+  - id: 43
+    category: architecture
+    name: "Event-Driven Architecture"
+    phase: phase1_design
+    severity: medium
+    description: "Design event-driven communication between services"
+    detector:
+      type: manual_review
+      heuristics:
+        - "Identify event publishing requirements"
+        - "Plan for event consumers"
+        - "Design event schemas"
+    remediation:
+      strategy: "Use Spring Events or messaging for event-driven design"
+      example: |
+        // Event
+        public class OrderCreatedEvent extends ApplicationEvent {
+          private final Order order;
+          
+          public OrderCreatedEvent(Object source, Order order) {
+            super(source);
+            this.order = order;
+          }
+        }
+        
+        // Publisher
+        @Service
+        public class OrderService {
+          @Autowired
+          private ApplicationEventPublisher eventPublisher;
+          
+          public void createOrder(Order order) {
+            orderRepository.save(order);
+            eventPublisher.publishEvent(new OrderCreatedEvent(this, order));
+          }
+        }
+        
+        // Listener
+        @Component
+        public class OrderEventListener {
+          @EventListener
+          public void handleOrderCreated(OrderCreatedEvent event) {
+            // Handle event
+          }
+        }
+
+  - id: 44
+    category: build_config
+    name: "Profile-Specific Configuration"
+    phase: phase3_compilation
+    severity: medium
+    description: "Configure environment-specific properties"
+    detector:
+      type: config_check
+      heuristics:
+        - "Verify profile-specific YAML files"
+        - "Check property overrides"
+        - "Validate environment variables"
+    remediation:
+      strategy: "Use Spring profiles for environment configuration"
+      example: |
+        # application.yml (default)
+        spring:
+          application:
+            name: order-service
+        
+        # application-dev.yml
+        spring:
+          datasource:
+            url: jdbc:h2:mem:testdb
+        
+        # application-prod.yml
+        spring:
+          datasource:
+            url: jdbc:postgresql://prod-db:5432/orders
+
+  - id: 45
+    category: testing
+    name: "Performance Testing"
+    phase: phase4_testing
+    severity: low
+    description: "Create performance tests for critical endpoints"
+    detector:
+      type: test_review
+      heuristics:
+        - "Check for load testing setup"
+        - "Verify performance benchmarks"
+        - "Validate response time assertions"
+    remediation:
+      strategy: "Use JMeter or Gatling for performance testing"
+      example: |
+        // Gatling simulation
+        class OrderServiceSimulation extends Simulation {
+          
+          val httpProtocol = http
+            .baseUrl("http://localhost:8080")
+            .acceptHeader("application/json")
+          
+          val scn = scenario("Create Orders")
+            .exec(http("Create Order")
+              .post("/api/v1/orders")
+              .body(StringBody("""{"customerId": 1}"""))
+              .check(status.is(201)))
+          
+          setUp(
+            scn.inject(rampUsers(100) during (60 seconds))
+          ).protocols(httpProtocol)
+        }
