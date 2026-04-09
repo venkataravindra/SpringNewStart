@@ -1,0 +1,72 @@
+in patterns dir : phase1_patterns.yaml
+phase: phase1_design
+phase_name: "Spring Boot Architecture Design"
+patterns: [6, 7, 8, 9, 10, 29, 36, 38, 43]
+scope: "Design microservices architecture, REST APIs, messaging patterns, data models, configuration strategy"
+
+audit_checklist:
+  - "Define microservice boundaries based on TIBCO process groupings"
+  - "Design REST API endpoints with proper HTTP methods"
+  - "Select messaging patterns (pub/sub, point-to-point, request/reply)"
+  - "Design JPA entities and database schema"
+  - "Plan configuration management strategy"
+  - "Design transaction boundaries and propagation"
+  - "Plan for asynchronous processing requirements"
+  - "Define API versioning strategy"
+  - "Design event-driven communication patterns"
+
+fix_priorities:
+  - pattern: 6
+    priority: critical
+    reason: "Microservice boundaries determine entire architecture"
+  - pattern: 7
+    priority: critical
+    reason: "REST API design defines service contracts"
+  - pattern: 8
+    priority: critical
+    reason: "Messaging patterns affect system reliability and performance"
+  - pattern: 9
+    priority: high
+    reason: "Data model design impacts all layers of application"
+  - pattern: 29
+    priority: high
+    reason: "Transaction management affects data consistency"
+  - pattern: 10
+    priority: medium
+    reason: "Configuration strategy affects deployment flexibility"
+  - pattern: 36
+    priority: medium
+    reason: "Async processing design affects system responsiveness"
+  - pattern: 38
+    priority: low
+    reason: "API versioning enables future evolution"
+  - pattern: 43
+    priority: low
+    reason: "Event-driven design improves decoupling"
+
+validation_criteria:
+  - "Microservices have clear, single responsibilities"
+  - "REST APIs follow RESTful principles and naming conventions"
+  - "Messaging patterns match TIBCO integration patterns"
+  - "Data models are normalized and properly related"
+  - "Configuration externalized for all environments"
+  - "Transaction boundaries clearly defined"
+  - "Async operations identified for long-running processes"
+  - "API versioning strategy documented"
+  - "Event flows documented for inter-service communication"
+
+expected_outcomes:
+  - "Comprehensive design.md with architecture diagrams"
+  - "OpenAPI/Swagger specifications for all REST APIs"
+  - "Data model ERD diagrams"
+  - "Messaging architecture diagram"
+  - "TIBCO → Spring Boot component mapping table"
+  - "Configuration management strategy document"
+  - "Transaction boundary definitions"
+
+guardrails:
+  - "Follow Spring Boot and microservices best practices"
+  - "Ensure backward compatibility with existing integrations"
+  - "Design for cloud-native deployment"
+  - "Keep services loosely coupled"
+  - "Design for observability and monitoring"
