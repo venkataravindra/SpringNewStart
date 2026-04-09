@@ -1,0 +1,64 @@
+in patterns dir: phase4_patterns.yaml
+phase: phase4_testing
+phase_name: "Automated Testing & Validation"
+patterns: [23, 24, 25, 26, 27, 41, 45]
+scope: "Generate comprehensive unit tests, integration tests, validate test coverage, ensure quality"
+
+audit_checklist:
+  - "Check unit test coverage for all service classes (>80%)"
+  - "Verify controller integration tests with MockMvc"
+  - "Validate repository tests with @DataJpaTest"
+  - "Check JMS listener tests with embedded broker"
+  - "Verify exception handling tests"
+  - "Validate integration test suite covering main flows"
+  - "Check performance tests for critical endpoints"
+
+fix_priorities:
+  - pattern: 23
+    priority: critical
+    reason: "Unit tests validate core business logic"
+  - pattern: 24
+    priority: critical
+    reason: "Controller tests validate API contracts"
+  - pattern: 41
+    priority: high
+    reason: "Integration tests validate end-to-end flows"
+  - pattern: 25
+    priority: high
+    reason: "Repository tests validate data access layer"
+  - pattern: 27
+    priority: high
+    reason: "Exception tests ensure proper error handling"
+  - pattern: 26
+    priority: medium
+    reason: "JMS tests validate message processing"
+  - pattern: 45
+    priority: low
+    reason: "Performance tests validate non-functional requirements"
+
+validation_criteria:
+  - "Unit test coverage >80% for service classes"
+  - "All REST endpoints have integration tests"
+  - "All repository methods tested"
+  - "JMS listeners tested with test messages"
+  - "All exception scenarios covered"
+  - "Integration tests pass for main business flows"
+  - "Performance tests meet response time requirements"
+
+expected_outcomes:
+  - "Comprehensive unit test suite (JUnit 5 + Mockito)"
+  - "Integration tests covering all REST endpoints"
+  - "Repository tests with in-memory database"
+  - "JMS listener tests with embedded broker"
+  - "Exception handling tests for all error scenarios"
+  - "unit-test-summary.md with coverage report"
+  - "All tests passing successfully"
+
+guardrails:
+  - "Follow AAA pattern (Arrange, Act, Assert)"
+  - "Use meaningful test names describing scenarios"
+  - "Mock external dependencies in unit tests"
+  - "Use test containers for integration tests when needed"
+  - "Ensure tests are independent and repeatable"
+  - "Avoid testing Spring Boot framework itself"
+  - "Focus on business logic and edge cases"
