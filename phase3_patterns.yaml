@@ -1,0 +1,74 @@
+in patterns dir: phase3_patterns.yaml
+phase: phase3_compilation
+phase_name: "Build & Runtime Validation"
+patterns: [18, 19, 20, 21, 22, 33, 39, 40, 44]
+scope: "Ensure application builds successfully, resolve dependencies, validate runtime startup, configure profiles"
+
+audit_checklist:
+  - "Verify Maven/Gradle build configuration"
+  - "Check all required dependencies are present"
+  - "Validate dependency versions and conflicts"
+  - "Ensure application starts without errors"
+  - "Verify all beans are created successfully"
+  - "Check package structure and component scanning"
+  - "Validate database migration setup (Flyway/Liquibase)"
+  - "Verify CORS configuration for cross-origin requests"
+  - "Check Docker containerization setup"
+  - "Validate profile-specific configurations"
+
+fix_priorities:
+  - pattern: 18
+    priority: critical
+    reason: "Build configuration is foundation for compilation"
+  - pattern: 19
+    priority: critical
+    reason: "Compilation errors block all further progress"
+  - pattern: 21
+    priority: critical
+    reason: "Application must start successfully"
+  - pattern: 20
+    priority: high
+    reason: "Dependency conflicts cause runtime failures"
+  - pattern: 22
+    priority: high
+    reason: "Package structure affects component scanning"
+  - pattern: 44
+    priority: high
+    reason: "Profile configuration enables environment deployment"
+  - pattern: 33
+    priority: medium
+    reason: "Database migrations ensure schema consistency"
+  - pattern: 39
+    priority: medium
+    reason: "CORS configuration required for frontend integration"
+  - pattern: 40
+    priority: low
+    reason: "Docker setup enables containerized deployment"
+
+validation_criteria:
+  - "Maven/Gradle build completes without errors"
+  - "All compilation errors resolved"
+  - "No dependency version conflicts"
+  - "Application starts successfully on all profiles"
+  - "All Spring beans created without errors"
+  - "Component scanning finds all components"
+  - "Database migrations execute successfully"
+  - "CORS allows required origins"
+  - "Docker image builds successfully"
+  - "Profile-specific properties load correctly"
+
+expected_outcomes:
+  - "Clean build with no compilation errors"
+  - "Application runs successfully in dev/test/prod profiles"
+  - "All dependencies resolved and compatible"
+  - "Database schema initialized correctly"
+  - "Docker image ready for deployment"
+  - "compilation-notes.md documenting all fixes"
+
+guardrails:
+  - "Only fix build and runtime issues, no feature additions"
+  - "Preserve existing functionality while fixing errors"
+  - "Use Spring Boot dependency management"
+  - "Follow semantic versioning for dependencies"
+  - "Test application startup after each fix"
+  - "Document all dependency changes"
