@@ -1,0 +1,98 @@
+in patterns dir: phase2_patterns.yaml
+phase: phase2_coding
+phase_name: "Spring Boot Implementation"
+patterns: [11, 12, 13, 14, 15, 16, 17, 30, 31, 32, 34, 35, 37, 42]
+scope: "Implement Spring Boot application with controllers, services, repositories, messaging, exception handling, configuration"
+
+audit_checklist:
+  - "Verify REST controller implementations with proper annotations"
+  - "Check service layer with business logic and transaction management"
+  - "Validate JMS listener implementations for message processing"
+  - "Ensure data repositories with JPA entities"
+  - "Verify global exception handling with @ControllerAdvice"
+  - "Check configuration properties with @ConfigurationProperties"
+  - "Validate DTO and mapper implementations"
+  - "Verify logging implementation with SLF4J"
+  - "Check security configuration (authentication/authorization)"
+  - "Validate API documentation with OpenAPI/Swagger"
+  - "Verify actuator and health check configuration"
+  - "Check caching strategy implementation"
+  - "Validate circuit breaker for external services"
+  - "Verify bean validation on DTOs"
+
+fix_priorities:
+  - pattern: 11
+    priority: critical
+    reason: "REST controllers are primary API interface"
+  - pattern: 12
+    priority: critical
+    reason: "Service layer contains core business logic"
+  - pattern: 14
+    priority: critical
+    reason: "Repositories enable data persistence"
+  - pattern: 13
+    priority: high
+    reason: "JMS listeners handle asynchronous messaging"
+  - pattern: 15
+    priority: high
+    reason: "Exception handling ensures proper error responses"
+  - pattern: 31
+    priority: high
+    reason: "Security is critical for production deployment"
+  - pattern: 17
+    priority: high
+    reason: "DTOs and mappers ensure clean API contracts"
+  - pattern: 42
+    priority: high
+    reason: "Validation prevents invalid data processing"
+  - pattern: 16
+    priority: medium
+    reason: "Configuration properties enable externalization"
+  - pattern: 30
+    priority: medium
+    reason: "Logging enables troubleshooting and monitoring"
+  - pattern: 37
+    priority: medium
+    reason: "Circuit breakers improve resilience"
+  - pattern: 34
+    priority: medium
+    reason: "Actuator enables monitoring and health checks"
+  - pattern: 35
+    priority: low
+    reason: "Caching improves performance for read-heavy operations"
+  - pattern: 32
+    priority: low
+    reason: "API documentation improves developer experience"
+
+validation_criteria:
+  - "All REST endpoints implemented with proper HTTP methods"
+  - "Business logic properly encapsulated in service layer"
+  - "JMS listeners configured for all message queues/topics"
+  - "All entities mapped with JPA annotations"
+  - "Global exception handler catches all exceptions"
+  - "Configuration externalized in application.yml"
+  - "DTOs validated with Jakarta Bean Validation"
+  - "Logging implemented at appropriate levels"
+  - "Security configured with authentication and authorization"
+  - "API documentation accessible via Swagger UI"
+  - "Health checks respond correctly"
+  - "Circuit breakers configured for external dependencies"
+
+expected_outcomes:
+  - "Complete Spring Boot application source code"
+  - "Clean package structure (controller, service, repository, model, config)"
+  - "README.md with TIBCO → Spring Boot mapping"
+  - "All business logic from TIBCO processes implemented"
+  - "Configuration-driven behavior for all environments"
+  - "Comprehensive error handling and logging"
+  - "Security implemented for all endpoints"
+
+guardrails:
+  - "Follow Spring Boot coding conventions"
+  - "Keep controllers thin, services focused"
+  - "Use constructor injection for dependencies"
+  - "Avoid business logic in controllers or repositories"
+  - "Use appropriate transaction boundaries"
+  - "Implement proper exception hierarchy"
+  - "Follow RESTful API design principles"
+  - "Keep configuration externalized"
