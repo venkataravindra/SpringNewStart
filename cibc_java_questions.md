@@ -458,12 +458,42 @@ public class ProperImplementationExample {
 }
 ```
 
+
 ### **HashMap Usage Example**
 ```java
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 public class HashMapUsageExample {
+    static class Person {
+        private String name;
+        private int age;
+        
+        public Person(String name, int age) {
+            this.name = name;
+            this.age = age;
+        }
+        
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) return true;
+            if (obj == null || getClass() != obj.getClass()) return false;
+            Person person = (Person) obj;
+            return age == person.age && Objects.equals(name, person.name);
+        }
+        
+        @Override
+        public int hashCode() {
+            return Objects.hash(name, age);
+        }
+        
+        @Override
+        public String toString() {
+            return "Person{name='" + name + "', age=" + age + "}";
+        }
+    }
+    
     public static void main(String[] args) {
         Map<Person, String> personMap = new HashMap<>();
         
@@ -474,4 +504,339 @@ public class HashMapUsageExample {
         
         // This works because of proper equals() and hashCode()
         String employeeId = personMap.get(john2);
-        System.out.println("Employee ID: " + employeeId); // Employee ID: 
+        System.out.println("Employee ID: " + employeeId); // Employee ID: 123
+        
+        // Demonstrates that logically equal objects work as same key
+        System.out.println("Contains john2: " + personMap.containsKey(john2)); // true
+    }
+}
+```
+
+### **Contract Rules:**
+
+#### **equals() Contract:**
+1. **Reflexive**: `x.equals(x)` must return `true`
+2. **Symmetric**: If `x.equals(y)` returns `true`, then `y.equals(x)` must return `true`
+3. **Transitive**: If `x.equals(y)` and `y.equals(z)` return `true`, then `x.equals(z)` must return `true`
+4. **Consistent**: Multiple invocations must return same result
+5. **Null handling**: `x.equals(null)` must return `false`
+
+#### **hashCode() Contract:**
+1. **Consistency**: Multiple invocations must return same value
+2. **Equality**: If `x.equals(y)` is `true`, then `x.hashCode() == y.hashCode()`
+3. **Inequality**: If `x.equals(y)` is `false`, hashCodes should preferably be different
+
+### **Common Mistakes:**
+```java
+public class CommonMistakes {
+    // MISTAKE 1: Override equals() but not hashCode()
+    static class BadPerson {
+        private String name;
+        
+        public BadPerson(String name) {
+            this.name = name;
+        }
+        
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) return true;
+            if (obj == null || getClass() != obj.getClass()) return false;
+            BadPerson that = (BadPerson) obj;
+            return Objects.equals(name, that.name);
+        }
+        
+        // Missing hashCode() override - VIOLATION!
+    }
+    
+    // MISTAKE 2: Using mutable fields in hashCode()
+    static class MutablePerson {
+        private String name; // mutable field
+        
+        public MutablePerson(String name) {
+            this.name = name;
+        }
+        
+        public void setName(String name) {
+            this.name = name;
+        }
+        
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) return true;
+            if (obj == null || getClass() != obj.getClass()) return false;
+            MutablePerson that = (MutablePerson) obj;
+            return Objects.equals(name, that.name);
+        }
+        
+        @Override
+        public int hashCode() {
+            return Objects.hash(name); // PROBLEM: uses mutable field
+        }
+    }
+    
+    public static void main(String[] args) {
+        // Demonstrating the mutable field problem
+        Map<MutablePerson, String> map = new HashMap<>();
+        MutablePerson person = new MutablePerson("John");
+        
+        map.put(person, "Value");
+        System.out.println("Before name change: " + map.get(person)); // Value
+        
+        person.setName("Jane"); // Changes hashCode!
+        System.out.println("After name change: " + map.get(person)); // null (lost!)
+    }
+}
+```
+
+---
+
+## **5. Comparable vs Comparator**
+
+### **Comparable Interface**
+```java
+import java.util.*;
+
+// Comparable provides natural ordering
+class Student implements Comparable<Student> {
+    private String name;
+    private int age;
+    private double gpa;
+    
+    public Student(String name, int age, double gpa) {
+        this.name = name;
+        this.age = age;
+        this.gpa = gpa;
+    }
+    
+    // Natural ordering by GPA (descending)
+    @Override
+    public int compareTo(Student other) {
+        return Double.compare(other.gpa, this.gpa); // Descending order
+    }
+    
+    // Getters
+    public String getName() { return name; }
+    public int getAge() { return age; }
+    public double getGpa() { return gpa; }
+    
+    @Override
+    public String toString() {
+        return String.format("Student{name='%s', age=%d, gpa=%.2f}", name, age, gpa);
+    }
+}
+
+public class ComparableExample {
+    public static void main(String[] args) {
+        List<Student> students = Arrays.asList(
+            new Student("Alice", 20, 3.8),
+            new Student("Bob", 22, 3.5),
+            new Student("Charlie", 21, 3.9),
+            new Student("Diana", 19, 3.7)
+        );
+        
+        System.out.println("Before sorting:");
+        students.forEach(System.out::println);
+        
+        // Natural ordering (by GPA descending)
+        Collections.sort(students);
+        
+        System.out.println("\nAfter sorting (by GPA descending):");
+        students.forEach(System.out::println);
+        
+        // Using in TreeSet (automatic sorting)
+        Set<Student> studentSet = new TreeSet<>(students);
+        System.out.println("\nTreeSet (automatically sorted):");
+        studentSet.forEach(System.out::println);
+    }
+}
+```
+
+### **Comparator Interface**
+```java
+import java.util.*;
+import java.util.stream.Collectors;
+
+public class ComparatorExample {
+    public static void main(String[] args) {
+        List<Student> students = Arrays.asList(
+            new Student("Alice", 20, 3.8),
+            new Student("Bob", 22, 3.5),
+            new Student("Charlie", 21, 3.9),
+            new Student("Diana", 19, 3.7)
+        );
+        
+        // 1. Sort by name (ascending)
+        students.sort(Comparator.comparing(Student::getName));
+        System.out.println("Sorted by name:");
+        students.forEach(System.out::println);
+        
+        // 2. Sort by age (descending)
+        students.sort(Comparator.comparing(Student::getAge).reversed());
+        System.out.println("\nSorted by age (descending):");
+        students.forEach(System.out::println);
+        
+        // 3. Multiple criteria sorting
+        students.sort(
+            Comparator.comparing(Student::getGpa).reversed()
+                     .thenComparing(Student::getName)
+        );
+        System.out.println("\nSorted by GPA (desc) then by name:");
+        students.forEach(System.out::println);
+        
+        // 4. Custom Comparator with lambda
+        students.sort((s1, s2) -> {
+            int gpaCompare = Double.compare(s2.getGpa(), s1.getGpa());
+            if (gpaCompare != 0) return gpaCompare;
+            return Integer.compare(s1.getAge(), s2.getAge());
+        });
+        System.out.println("\nCustom sorting (GPA desc, then age asc):");
+        students.forEach(System.out::println);
+    }
+}
+```
+
+### **Advanced Comparator Examples**
+```java
+import java.util.*;
+import java.util.function.Function;
+
+public class AdvancedComparatorExample {
+    
+    static class Employee {
+        private String name;
+        private String department;
+        private int salary;
+        private LocalDate joinDate;
+        
+        public Employee(String name, String department, int salary, LocalDate joinDate) {
+            this.name = name;
+            this.department = department;
+            this.salary = salary;
+            this.joinDate = joinDate;
+        }
+        
+        // Getters
+        public String getName() { return name; }
+        public String getDepartment() { return department; }
+        public int getSalary() { return salary; }
+        public LocalDate getJoinDate() { return joinDate; }
+        
+        @Override
+        public String toString() {
+            return String.format("Employee{name='%s', dept='%s', salary=%d, joinDate=%s}", 
+                               name, department, salary, joinDate);
+        }
+    }
+    
+    public static void main(String[] args) {
+        List<Employee> employees = Arrays.asList(
+            new Employee("John", "IT", 75000, LocalDate.of(2020, 1, 15)),
+            new Employee("Alice", "HR", 65000, LocalDate.of(2019, 3, 10)),
+            new Employee("Bob", "IT", 80000, LocalDate.of(2021, 6, 20)),
+            new Employee("Carol", "Finance", 70000, LocalDate.of(2020, 8, 5)),
+            new Employee("David", "IT", 75000, LocalDate.of(2018, 11, 30))
+        );
+        
+        // 1. Null-safe comparator
+        Comparator<Employee> nullSafeNameComparator = 
+            Comparator.nullsLast(Comparator.comparing(Employee::getName));
+        
+        // 2. Complex multi-level sorting
+        Comparator<Employee> complexComparator = 
+            Comparator.comparing(Employee::getDepartment)
+                     .thenComparing(Employee::getSalary, Comparator.reverseOrder())
+                     .thenComparing(Employee::getJoinDate);
+        
+        employees.sort(complexComparator);
+        System.out.println("Complex sorting (dept asc, salary desc, joinDate asc):");
+        employees.forEach(System.out::println);
+        
+        // 3. Custom key extractor
+        Function<Employee, String> keyExtractor = emp -> 
+            emp.getDepartment() + "_" + emp.getSalary();
+        
+        employees.sort(Comparator.comparing(keyExtractor));
+        System.out.println("\nCustom key sorting:");
+        employees.forEach(System.out::println);
+        
+        // 4. Using Comparator in Stream operations
+        Optional<Employee> highestPaidIT = employees.stream()
+            .filter(emp -> "IT".equals(emp.getDepartment()))
+            .max(Comparator.comparing(Employee::getSalary));
+        
+        System.out.println("\nHighest paid IT employee: " + highestPaidIT.orElse(null));
+        
+        // 5. Top N employees by salary
+        List<Employee> top3BySalary = employees.stream()
+            .sorted(Comparator.comparing(Employee::getSalary).reversed())
+            .limit(3)
+            .collect(Collectors.toList());
+        
+        System.out.println("\nTop 3 employees by salary:");
+        top3BySalary.forEach(System.out::println);
+    }
+}
+```
+
+### **Key Differences:**
+
+| Feature | Comparable | Comparator |
+|---------|------------|------------|
+| **Package** | java.lang | java.util |
+| **Method** | compareTo(T o) | compare(T o1, T o2) |
+| **Sorting Logic** | Inside the class (natural ordering) | Outside the class (custom ordering) |
+| **Implementation** | Class implements Comparable | Separate class or lambda |
+| **Flexibility** | Single sorting sequence | Multiple sorting sequences |
+| **Modification** | Requires class modification | No class modification needed |
+| **Usage** | Collections.sort(list) | Collections.sort(list, comparator) |
+
+---
+
+## **6. Functional Interfaces**
+
+### **Built-in Functional Interfaces**
+
+#### **1. Predicate<T>**
+```java
+import java.util.*;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+
+public class PredicateExample {
+    public static void main(String[] args) {
+        List<Integer> numbers = Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+        
+        // Basic Predicate
+        Predicate<Integer> isEven = n -> n % 2 == 0;
+        Predicate<Integer> isGreaterThan5 = n -> n > 5;
+        
+        // Using Predicate
+        List<Integer> evenNumbers = numbers.stream()
+            .filter(isEven)
+            .collect(Collectors.toList());
+        System.out.println("Even numbers: " + evenNumbers);
+        
+        // Combining Predicates
+        Predicate<Integer> evenAndGreaterThan5 = isEven.and(isGreaterThan5);
+        List<Integer> result = numbers.stream()
+            .filter(evenAndGreaterThan5)
+            .collect(Collectors.toList());
+        System.out.println("Even and > 5: " + result);
+        
+        // Predicate methods: and(), or(), negate()
+        Predicate<Integer> oddOrLessThan5 = isEven.negate().or(n -> n < 5);
+        List<Integer> result2 = numbers.stream()
+            .filter(oddOrLessThan5)
+            .collect(Collectors.toList());
+        System.out.println("Odd or < 5: " + result2);
+        
+        // Static method: isEqual()
+        Predicate<String> isHello = Predicate.isEqual("Hello");
+        System.out.println("Is 'Hello': " + isHello.test("Hello")); // true
+        System.out.println("Is 'World': " + isHello.test("World")); // false
+    }
+}
+```
+
+
+ 
