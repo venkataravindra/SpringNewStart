@@ -839,4 +839,417 @@ public class PredicateExample {
 ```
 
 
+#### **2. Function<T, R> **
+```java
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+public class FunctionExample {
+    public static void main(String[] args) {
+        List<String> names = Arrays.asList("john doe", "alice smith", "bob jones");
+        
+        // Function composition: compose()
+        Function<String, String> removeSpaces = s -> s.replace(" ", "");
+        Function<String, String> toUpperCase = String::toUpperCase;
+        
+        // compose() applies the parameter function first, then this function
+        Function<String, String> upperCaseNoSpaces = toUpperCase.compose(removeSpaces);
+        
+        List<String> result = names.stream()
+            .map(upperCaseNoSpaces)
+            .collect(Collectors.toList());
+        System.out.println("Uppercase without spaces: " + result);
+        
+        // Identity function
+        Function<String, String> identity = Function.identity();
+        List<String> unchanged = names.stream()
+            .map(identity)
+            .collect(Collectors.toList());
+        System.out.println("Identity result: " + unchanged);
+        
+        // Complex transformation
+        Function<String, Map<String, Object>> createPersonMap = name -> {
+            String[] parts = name.split(" ");
+            Map<String, Object> person = new HashMap<>();
+            person.put("firstName", parts[0]);
+            person.put("lastName", parts.length > 1 ? parts[1] : "");
+            person.put("fullName", name);
+            person.put("nameLength", name.length());
+            return person;
+        };
+        
+        List<Map<String, Object>> personMaps = names.stream()
+            .map(createPersonMap)
+            .collect(Collectors.toList());
+        System.out.println("Person maps: " + personMaps);
+    }
+}
+```
+
+#### **3. Consumer<T>**
+```java
+import java.util.*;
+import java.util.function.Consumer;
+
+public class ConsumerExample {
+    public static void main(String[] args) {
+        List<String> names = Arrays.asList("John", "Alice", "Bob", "Charlie");
+        
+        // Basic Consumer
+        Consumer<String> printName = System.out::println;
+        Consumer<String> printLength = name -> System.out.println(name + " has " + name.length() + " characters");
+        
+        // Using Consumer
+        System.out.println("Names:");
+        names.forEach(printName);
+        
+        // Consumer chaining with andThen()
+        Consumer<String> printNameAndLength = printName.andThen(printLength);
+        System.out.println("\nNames with lengths:");
+        names.forEach(printNameAndLength);
+        
+        // Complex Consumer example
+        List<StringBuilder> builders = Arrays.asList(
+            new StringBuilder("Hello"),
+            new StringBuilder("World"),
+            new StringBuilder("Java")
+        );
+        
+        Consumer<StringBuilder> appendExclamation = sb -> sb.append("!");
+        Consumer<StringBuilder> makeUpperCase = sb -> {
+            String str = sb.toString().toUpperCase();
+            sb.setLength(0);
+            sb.append(str);
+        };
+        Consumer<StringBuilder> addPrefix = sb -> sb.insert(0, ">> ");
+        
+        // Chain multiple operations
+        Consumer<StringBuilder> complexOperation = appendExclamation
+            .andThen(makeUpperCase)
+            .andThen(addPrefix);
+        
+        builders.forEach(complexOperation);
+        System.out.println("\nProcessed builders:");
+        builders.forEach(System.out::println);
+    }
+}
+```
+
+#### **4. Supplier<T>**
+```java
+import java.util.*;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
+
+public class SupplierExample {
+    public static void main(String[] args) {
+        // Basic Supplier
+        Supplier<String> stringSupplier = () -> "Hello World";
+        Supplier<Double> randomSupplier = Math::random;
+        Supplier<Date> dateSupplier = Date::new;
+        
+        System.out.println("String: " + stringSupplier.get());
+        System.out.println("Random: " + randomSupplier.get());
+        System.out.println("Date: " + dateSupplier.get());
+        
+        // Supplier with Stream.generate()
+        List<Integer> randomNumbers = Stream.generate(() -> (int)(Math.random() * 100))
+            .limit(5)
+            .collect(ArrayList::new, ArrayList::add, ArrayList::addAll);
+        System.out.println("Random numbers: " + randomNumbers);
+        
+        // Lazy evaluation with Supplier
+        Supplier<String> expensiveOperation = () -> {
+            System.out.println("Performing expensive operation...");
+            try {
+                Thread.sleep(1000); // Simulate expensive operation
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            return "Expensive result";
+        };
+        
+        // The operation is not executed until get() is called
+        System.out.println("Supplier created, but not executed yet");
+        String result = expensiveOperation.get(); // Now it executes
+        System.out.println("Result: " + result);
+        
+        // Factory pattern with Supplier
+        Supplier<List<String>> listFactory = ArrayList::new;
+        Supplier<Set<String>> setFactory = HashSet::new;
+        Supplier<Map<String, String>> mapFactory = HashMap::new;
+        
+        List<String> list = listFactory.get();
+        Set<String> set = setFactory.get();
+        Map<String, String> map = mapFactory.get();
+        
+        System.out.println("Created: " + list.getClass().getSimpleName());
+        System.out.println("Created: " + set.getClass().getSimpleName());
+        System.out.println("Created: " + map.getClass().getSimpleName());
+    }
+}
+```
+
+### **Custom Functional Interfaces**
+```java
+@FunctionalInterface
+interface Calculator {
+    double calculate(double a, double b);
+    
+    // Default methods are allowed
+    default double square(double a) {
+        return calculate(a, a);
+    }
+    
+    // Static methods are allowed
+    static double abs(double a) {
+        return a < 0 ? -a : a;
+    }
+}
+
+@FunctionalInterface
+interface TriFunction<T, U, V, R> {
+    R apply(T t, U u, V v);
+}
+
+@FunctionalInterface
+interface StringProcessor {
+    String process(String input);
+    
+    default StringProcessor andThen(StringProcessor after) {
+        return input -> after.process(this.process(input));
+    }
+}
+
+public class CustomFunctionalInterfaceExample {
+    public static void main(String[] args) {
+        // Using Calculator
+        Calculator addition = (a, b) -> a + b;
+        Calculator multiplication = (a, b) -> a * b;
+        Calculator division = (a, b) -> b != 0 ? a / b : 0;
+        
+        System.out.println("Addition: " + addition.calculate(10, 5));
+        System.out.println("Multiplication: " + multiplication.calculate(10, 5));
+        System.out.println("Division: " + division.calculate(10, 5));
+        System.out.println("Square: " + addition.square(5));
+        System.out.println("Absolute: " + Calculator.abs(-10));
+        
+        // Using TriFunction
+        TriFunction<String, String, String, String> concatenateThree = 
+            (a, b, c) -> a + " " + b + " " + c;
+        
+        String result = concatenateThree.apply("Hello", "Beautiful", "World");
+        System.out.println("Concatenated: " + result);
+        
+        // Using StringProcessor with method chaining
+        StringProcessor toUpperCase = String::toUpperCase;
+        StringProcessor addExclamation = s -> s + "!";
+        StringProcessor addPrefix = s -> ">> " + s;
+        
+        StringProcessor chainedProcessor = toUpperCase
+            .andThen(addExclamation)
+            .andThen(addPrefix);
+        
+        String processed = chainedProcessor.process("hello world");
+        System.out.println("Processed: " + processed);
+    }
+}
+```
+
+### **Method References**
+```java
+import java.util.*;
+import java.util.function.*;
+
+public class MethodReferenceExample {
+    
+    static class Person {
+        private String name;
+        private int age;
+        
+        public Person(String name, int age) {
+            this.name = name;
+            this.age = age;
+        }
+        
+        public String getName() { return name; }
+        public int getAge() { return age; }
+        
+        public static int compareByAge(Person p1, Person p2) {
+            return Integer.compare(p1.age, p2.age);
+        }
+        
+        public void printInfo() {
+            System.out.println("Person: " + name + ", Age: " + age);
+        }
+        
+        @Override
+        public String toString() {
+            return name + "(" + age + ")";
+        }
+    }
+    
+    public static void main(String[] args) {
+        List<Person> people = Arrays.asList(
+            new Person("Alice", 25),
+            new Person("Bob", 30),
+            new Person("Charlie", 20)
+        );
+        
+        // 1. Static method reference
+        people.sort(Person::compareByAge);
+        System.out.println("Sorted by age: " + people);
+        
+        // 2. Instance method reference of a particular object
+        Person alice = people.get(0);
+        Supplier<String> nameSupplier = alice::getName;
+        System.out.println("Alice's name: " + nameSupplier.get());
+        
+        // 3. Instance method reference of an arbitrary object
+        Function<Person, String> nameExtractor = Person::getName;
+        List<String> names = people.stream()
+            .map(nameExtractor)
+            .collect(ArrayList::new, ArrayList::add, ArrayList::addAll);
+        System.out.println("Names: " + names);
+        
+        // 4. Constructor reference
+        BiFunction<String, Integer, Person> personFactory = Person::new;
+        Person newPerson = personFactory.apply("David", 35);
+        System.out.println("New person: " + newPerson);
+        
+        // 5. Array constructor reference
+        Function<Integer, Person[]> arrayFactory = Person[]::new;
+        Person[] personArray = arrayFactory.apply(3);
+        System.out.println("Array length: " + personArray.length);
+        
+        // 6. Method reference vs Lambda comparison
+        // These are equivalent:
+        Consumer<Person> lambda = person -> person.printInfo();
+        Consumer<Person> methodRef = Person::printInfo;
+        
+        System.out.println("\nUsing lambda:");
+        people.forEach(lambda);
+        
+        System.out.println("\nUsing method reference:");
+        people.forEach(methodRef);
+    }
+}
+```
+
+---
+
+## **7. Stream API**
+
+### **Basic Stream Operations**
+```java
+import java.util.*;
+import java.util.stream.*;
+
+public class BasicStreamExample {
+    public static void main(String[] args) {
+        List<Integer> numbers = Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+        
+        // 1. Filter - Intermediate operation
+        List<Integer> evenNumbers = numbers.stream()
+            .filter(n -> n % 2 == 0)
+            .collect(Collectors.toList());
+        System.out.println("Even numbers: " + evenNumbers);
+        
+        // 2. Map - Transform elements
+        List<Integer> squares = numbers.stream()
+            .map(n -> n * n)
+            .collect(Collectors.toList());
+        System.out.println("Squares: " + squares);
+        
+        // 3. Reduce - Terminal operation
+        Optional<Integer> sum = numbers.stream()
+            .reduce((a, b) -> a + b);
+        System.out.println("Sum: " + sum.orElse(0));
+        
+        // 4. forEach - Terminal operation
+        System.out.print("Numbers: ");
+        numbers.stream()
+            .filter(n -> n > 5)
+            .forEach(n -> System.out.print(n + " "));
+        System.out.println();
+        
+        // 5. Chaining operations
+        List<String> result = numbers.stream()
+            .filter(n -> n % 2 == 0)           // Keep even numbers
+            .map(n -> n * n)                   // Square them
+            .filter(n -> n > 10)               // Keep squares > 10
+            .map(n -> "Number: " + n)          // Convert to string
+            .collect(Collectors.toList());     // Collect to list
+        
+        System.out.println("Chained operations result: " + result);
+    }
+}
+```
+
+### **Stream Creation Methods**
+```java
+import java.util.*;
+import java.util.stream.*;
+import java.nio.file.*;
+import java.io.IOException;
+
+public class StreamCreationExample {
+    public static void main(String[] args) {
+        // 1. From Collections
+        List<String> list = Arrays.asList("a", "b", "c");
+        Stream<String> streamFromList = list.stream();
+        
+        // 2. From Arrays
+        String[] array = {"x", "y", "z"};
+        Stream<String> streamFromArray = Arrays.stream(array);
+        
+        // 3. Using Stream.of()
+        Stream<String> streamOf = Stream.of("hello", "world", "java");
+        
+        // 4. Empty Stream
+        Stream<String> emptyStream = Stream.empty();
+        
+        // 5. Infinite Streams
+        // Generate
+        Stream<Double> randomNumbers = Stream.generate(Math::random);
+        List<Double> first5Random = randomNumbers.limit(5).collect(Collectors.toList());
+        System.out.println("Random numbers: " + first5Random);
+        
+        // Iterate
+        Stream<Integer> evenNumbers = Stream.iterate(0, n -> n + 2);
+        List<Integer> first10Even = evenNumbers.limit(10).collect(Collectors.toList());
+        System.out.println("Even numbers: " + first10Even);
+        
+        // 6. Range Streams
+        IntStream range = IntStream.range(1, 6); // 1 to 5
+        IntStream rangeClosed = IntStream.rangeClosed(1, 5); // 1 to 5 inclusive
+        
+        System.out.println("Range: " + range.boxed().collect(Collectors.toList()));
+        System.out.println("Range closed: " + rangeClosed.boxed().collect(Collectors.toList()));
+        
+        // 7. From String
+        IntStream charStream = "Hello".chars();
+        List<Character> chars = charStream
+            .mapToObj(c -> (char) c)
+            .collect(Collectors.toList());
+        System.out.println("Characters: " + chars);
+        
+        // 8. Parallel Stream
+        Stream<String> parallelStream = list.parallelStream();
+        
+        // 9. Builder pattern
+        Stream<String> builtStream = Stream.<String>builder()
+            .add("a")
+            .add("b")
+            .add("c")
+            .build();
+        
+        System.out.println("Built stream: " + 
+            builtStream.collect(Collectors.toList()));
+    }
+}
+```
+
+
  
